@@ -1,0 +1,849 @@
+{
+  "mfa-gauth": {
+    "startState": "initializeLoginForm",
+    "states": {
+      "initializeLoginForm": {
+        "actionList": [
+          "initializeLoginAction"
+        ],
+        "transitions": [
+          "success -> mfaCheckBypass"
+        ]
+      },
+      "accountRegistrationCheck": {
+        "actionList": [
+          "googleAccountRegistrationAction"
+        ],
+        "transitions": [
+          "register -> viewRegistration",
+          "success -> viewLoginForm"
+        ]
+      },
+      "viewRegistration": {
+        "entryActions": [
+          "[SetAction@a3bb1fd6 name = viewScope.principal, value = conversationScope.authentication.principal]"
+        ],
+        "isViewState": true,
+        "isRedirect": false,
+        "renderActions": [],
+        "viewId": "casGoogleAuthenticatorRegistrationView",
+        "transitions": [
+          "submit -> saveRegistration"
+        ]
+      },
+      "saveRegistration": {
+        "actionList": [
+          "googleSaveAccountRegistrationAction"
+        ],
+        "transitions": [
+          "success -> viewLoginForm"
+        ]
+      },
+      "viewLoginForm": {
+        "attributes": [
+          {
+            "empty": false
+          }
+        ],
+        "entryActions": [
+          "[SetAction@c6322ca7 name = viewScope.principal, value = conversationScope.authentication.principal]"
+        ],
+        "isViewState": true,
+        "isRedirect": false,
+        "renderActions": [],
+        "viewId": "casGoogleAuthenticatorLoginView",
+        "transitions": [
+          "submit -> realSubmit"
+        ]
+      },
+      "realSubmit": {
+        "actionList": [
+          "oneTimeTokenAuthenticationWebflowAction"
+        ],
+        "transitions": [
+          "success -> prepareRegisterTrustedDevice",
+          "error -> initializeLoginForm",
+          "successWithWarnings -> successWithWarnings",
+          "unavailable -> mfaUnavailable",
+          "deny -> mfaDenied"
+        ]
+      },
+      "success": {
+        "isEndState": true
+      },
+      "verifyTrustedDevice": {
+        "actionList": [
+          "mfaVerifyTrustAction"
+        ],
+        "transitions": [
+          "yes -> finishMfaTrustedAuth",
+          "no -> accountRegistrationCheck",
+          "skip -> accountRegistrationCheck"
+        ]
+      },
+      "prepareRegisterTrustedDevice": {
+        "actionList": [
+          "mfaPrepareTrustDeviceViewAction"
+        ],
+        "transitions": [
+          "skip -> success",
+          "register -> registerDeviceView"
+        ]
+      },
+      "registerDeviceView": {
+        "attributes": [
+          {
+            "empty": false
+          }
+        ],
+        "isViewState": true,
+        "isRedirect": false,
+        "viewId": "casMfaRegisterDeviceView",
+        "transitions": [
+          "submit -> registerTrustedDevice"
+        ]
+      },
+      "registerTrustedDevice": {
+        "actionList": [
+          "mfaSetTrustAction"
+        ],
+        "transitions": [
+          "* -> success"
+        ]
+      },
+      "finishMfaTrustedAuth": {
+        "actionList": [
+          "oneTimeTokenAuthenticationWebflowAction"
+        ],
+        "transitions": [
+          "success -> success",
+          "* -> success"
+        ]
+      },
+      "mfaCheckBypass": {
+        "actionList": [
+          "mfaBypassAction"
+        ],
+        "transitions": [
+          "no -> mfaCheckAvailable",
+          "yes -> success"
+        ]
+      },
+      "mfaCheckAvailable": {
+        "actionList": [
+          "mfaAvailableAction"
+        ],
+        "transitions": [
+          "yes -> verifyTrustedDevice",
+          "no -> mfaFailure"
+        ]
+      },
+      "mfaFailure": {
+        "actionList": [
+          "mfaFailureAction"
+        ],
+        "transitions": [
+          "unavailable -> unavailable",
+          "bypass -> success"
+        ]
+      },
+      "successWithWarnings": {
+        "isEndState": true
+      },
+      "mfaUnavailable": {
+        "isEndState": true
+      },
+      "mfaDenied": {
+        "isEndState": true
+      }
+    },
+    "possibleOutcomes": [
+      "success",
+      "successWithWarnings",
+      "mfaUnavailable",
+      "mfaDenied"
+    ],
+    "stateCount": 18,
+    "variables": "credential,mfaTrustRecord"
+  },
+  "logout": {
+    "startState": "terminateSession",
+    "states": {
+      "redirectView": {
+        "isEndState": true
+      },
+      "terminateSession": {
+        "entryActions": [
+          "delegatedAuthenticationClientLogoutAction"
+        ],
+        "actionList": [
+          "terminateSessionAction"
+        ],
+        "transitions": [
+          "warn -> confirmLogoutView",
+          "* -> doLogout"
+        ]
+      },
+      "confirmLogoutView": {
+        "isViewState": true,
+        "isRedirect": false,
+        "viewId": "casConfirmLogoutView",
+        "transitions": [
+          "success -> terminateSession"
+        ]
+      },
+      "doLogout": {
+        "actionList": [
+          "logoutAction"
+        ],
+        "transitions": [
+          "finish -> finishLogout",
+          "front -> frontLogout"
+        ]
+      },
+      "frontLogout": {
+        "actionList": [
+          "frontChannelLogoutAction"
+        ],
+        "transitions": [
+          "finish -> finishLogout",
+          "propagate -> propagateLogoutRequests"
+        ]
+      },
+      "propagateLogoutRequests": {
+        "isEndState": true
+      },
+      "logoutView": {
+        "entryActions": [
+          "logoutViewSetupAction"
+        ],
+        "isEndState": true
+      },
+      "finishLogout": {
+        "transitions": [
+          "flowScope.logoutRedirectUrl != null -> redirectView",
+          "* -> logoutView"
+        ]
+      }
+    },
+    "possibleOutcomes": [
+      "redirectView",
+      "propagateLogoutRequests",
+      "logoutView"
+    ],
+    "stateCount": 8
+  },
+  "login": {
+    "startState": "delegatedAuthenticationAction",
+    "states": {
+      "initializeLoginForm": {
+        "actionList": [
+          "initializeLoginAction"
+        ],
+        "transitions": [
+          "success -> viewLoginForm"
+        ]
+      },
+      "viewRedirectToUnauthorizedUrlView": {
+        "entryActions": [
+          "redirectUnauthorizedServiceUrlAction"
+        ],
+        "isEndState": true
+      },
+      "viewServiceErrorView": {
+        "isEndState": true
+      },
+      "redirectView": {
+        "isEndState": true
+      },
+      "postView": {
+        "isEndState": true
+      },
+      "headerView": {
+        "actionList": [
+          "injectResponseHeadersAction"
+        ],
+        "transitions": [
+          "success -> endWebflowExecution",
+          "redirect -> redirectView"
+        ]
+      },
+      "viewGenericLoginSuccess": {
+        "entryActions": [
+          "genericSuccessViewAction"
+        ],
+        "isEndState": true
+      },
+      "showWarningView": {
+        "isViewState": true,
+        "isRedirect": false,
+        "viewId": "casConfirmView",
+        "transitions": [
+          "success -> finalizeWarning"
+        ]
+      },
+      "finalizeWarning": {
+        "actionList": [
+          "serviceWarningAction"
+        ],
+        "transitions": [
+          "redirect -> redirect"
+        ]
+      },
+      "endWebflowExecution": {
+        "isEndState": true
+      },
+      "serviceUnauthorizedCheck": {
+        "entryActions": [
+          "setServiceUnauthorizedRedirectUrlAction"
+        ],
+        "transitions": [
+          "flowScope.unauthorizedRedirectUrl != null -> viewRedirectToUnauthorizedUrlView",
+          "* -> viewServiceErrorView"
+        ]
+      },
+      "serviceCheck": {
+        "transitions": [
+          "flowScope.service != null -> generateServiceTicket",
+          "* -> viewGenericLoginSuccess"
+        ]
+      },
+      "warn": {
+        "transitions": [
+          "flowScope.warnCookieValue -> showWarningView",
+          "* -> redirect"
+        ]
+      },
+      "gatewayRequestCheck": {
+        "transitions": [
+          "requestParameters.gateway != '' and requestParameters.gateway != null and flowScope.service != null -> gatewayServicesManagementCheck",
+          "* -> serviceAuthorizationCheck"
+        ]
+      },
+      "hasServiceCheck": {
+        "transitions": [
+          "flowScope.service != null -> renewRequestCheck",
+          "* -> viewGenericLoginSuccess"
+        ]
+      },
+      "renewRequestCheck": {
+        "actionList": [
+          "renewAuthenticationRequestCheckAction"
+        ],
+        "transitions": [
+          "proceed -> generateServiceTicket",
+          "renew -> serviceAuthorizationCheck",
+          "* -> serviceAuthorizationCheck"
+        ]
+      },
+      "realSubmit": {
+        "actionList": [
+          "authenticationViaFormAction"
+        ],
+        "transitions": [
+          "warn -> warn",
+          "success -> createTicketGrantingTicket",
+          "successWithWarnings -> showAuthenticationWarningMessages",
+          "authenticationFailure -> handleAuthenticationFailure",
+          "error -> initializeLoginForm",
+          "valid -> serviceCheck",
+          "generateServiceTicket -> generateServiceTicket",
+          "mfa-composite -> mfa-composite",
+          "deny -> mfaDenied",
+          "unavailable -> mfaUnavailable",
+          "mfa-duo -> mfa-duo",
+          "deny -> mfaDenied",
+          "unavailable -> mfaUnavailable",
+          "mfa-gauth -> mfa-gauth"
+        ]
+      },
+      "initialAuthenticationRequestValidationCheck": {
+        "entryActions": [
+          "verifyRequiredServiceAction"
+        ],
+        "actionList": [
+          "initialAuthenticationRequestValidationAction"
+        ],
+        "transitions": [
+          "authenticationFailure -> handleAuthenticationFailure",
+          "error -> initializeLoginForm",
+          "success -> ticketGrantingTicketCheck",
+          "successWithWarnings -> showAuthenticationWarningMessages",
+          "mfa-duo -> mfa-duo",
+          "mfa-gauth -> mfa-gauth"
+        ]
+      },
+      "createTicketGrantingTicket": {
+        "actionList": [
+          "createTicketGrantingTicketAction"
+        ],
+        "transitions": [
+          "successWithWarnings -> showAuthenticationWarningMessages",
+          "success -> sendTicketGrantingTicket"
+        ]
+      },
+      "sendTicketGrantingTicket": {
+        "actionList": [
+          "sendTicketGrantingTicketAction"
+        ],
+        "transitions": [
+          "success -> serviceCheck",
+          "successWithWarnings -> showAuthenticationWarningMessages"
+        ]
+      },
+      "generateServiceTicket": {
+        "actionList": [
+          "generateServiceTicketAction"
+        ],
+        "transitions": [
+          "success -> redirect",
+          "warn -> warn",
+          "authenticationFailure -> handleAuthenticationFailure",
+          "error -> initializeLoginForm",
+          "gateway -> gatewayServicesManagementCheck"
+        ]
+      },
+      "gatewayServicesManagementCheck": {
+        "actionList": [
+          "gatewayServicesManagementCheck"
+        ],
+        "transitions": [
+          "success -> redirect"
+        ]
+      },
+      "serviceAuthorizationCheck": {
+        "actionList": [
+          "serviceAuthorizationCheck"
+        ],
+        "transitions": [
+          "* -> initializeLoginForm"
+        ]
+      },
+      "redirect": {
+        "actionList": [
+          "redirectToServiceAction"
+        ],
+        "exitActions": [
+          "[EvaluateAction@b5534daf expression = clearWebflowCredentialsAction, resultExpression = [null]]"
+        ],
+        "transitions": [
+          "post -> postView",
+          "header -> headerView",
+          "redirect -> redirectView"
+        ]
+      },
+      "handleAuthenticationFailure": {
+        "actionList": [
+          "authenticationExceptionHandler"
+        ],
+        "transitions": [
+          "AccountDisabledException -> casAccountDisabledView",
+          "AccountLockedException -> casAccountLockedView",
+          "AccountPasswordMustChangeException -> casMustChangePassView",
+          "CredentialExpiredException -> casExpiredPassView",
+          "InvalidLoginLocationException -> casBadWorkstationView",
+          "InvalidLoginTimeException -> casBadHoursView",
+          "FailedLoginException -> initializeLoginForm",
+          "AccountNotFoundException -> initializeLoginForm",
+          "UnauthorizedServiceForPrincipalException -> initializeLoginForm",
+          "PrincipalException -> initializeLoginForm",
+          "UnsatisfiedAuthenticationPolicyException -> initializeLoginForm",
+          "UnauthorizedAuthenticationException -> casAuthenticationBlockedView",
+          "serviceUnauthorizedCheck -> serviceUnauthorizedCheck",
+          "* -> initializeLoginForm"
+        ]
+      },
+      "terminateSession": {
+        "actionList": [
+          "terminateSessionAction"
+        ],
+        "transitions": [
+          "* -> gatewayRequestCheck"
+        ]
+      },
+      "ticketGrantingTicketCheck": {
+        "actionList": [
+          "ticketGrantingTicketCheckAction"
+        ],
+        "transitions": [
+          "notExists -> gatewayRequestCheck",
+          "invalid -> terminateSession",
+          "valid -> hasServiceCheck"
+        ]
+      },
+      "viewLoginForm": {
+        "attributes": [
+          {
+            "empty": false
+          }
+        ],
+        "entryActions": [
+          "org.apereo.cas.support.oauth.web.flow.OAuth20RegisteredServiceUIAction@4c8fd770",
+          "org.apereo.cas.support.saml.web.flow.SamlIdPMetadataUIAction@feeac44b",
+          "org.apereo.cas.oidc.web.flow.OidcRegisteredServiceUIAction@39e224eb"
+        ],
+        "isViewState": true,
+        "isRedirect": false,
+        "renderActions": [
+          {
+            "eventFactorySupport": {
+              "successEventId": "success",
+              "errorEventId": "error",
+              "yesEventId": "yes",
+              "noEventId": "no",
+              "nullEventId": "null",
+              "exceptionAttributeName": "exception",
+              "resultAttributeName": "result"
+            }
+          }
+        ],
+        "viewId": "casLoginView",
+        "transitions": [
+          "submit -> multiphaseStoreUserIdState"
+        ]
+      },
+      "showAuthenticationWarningMessages": {
+        "entryActions": [
+          "set requestScope.messages = messageContext.allMessages"
+        ],
+        "isViewState": true,
+        "isRedirect": false,
+        "renderActions": [],
+        "viewId": "casLoginMessageView",
+        "transitions": [
+          "proceed -> proceedFromAuthenticationWarningView"
+        ]
+      },
+      "proceedFromAuthenticationWarningView": {
+        "actionList": [
+          "sendTicketGrantingTicketAction"
+        ],
+        "transitions": [
+          "* -> serviceCheck"
+        ]
+      },
+      "multiphaseStoreUserIdState": {
+        "actionList": [
+          "storeUserIdForAuthenticationAction"
+        ],
+        "exitActions": [
+          "[EvaluateAction@915e3fdf expression = determineDelegatedRedirectAction, resultExpression = [null]]"
+        ],
+        "transitions": [
+          "success -> viewLoginForm",
+          "proceed -> realSubmit"
+        ]
+      },
+      "mfa-composite": {
+        "entryActions": [
+          "prepareMultifactorProviderSelectionAction"
+        ],
+        "isViewState": true,
+        "isRedirect": false,
+        "renderActions": [],
+        "viewId": "casCompositeMfaProviderSelectionView",
+        "transitions": [
+          "submit -> compositeMfaProviderSelectedAction"
+        ]
+      },
+      "compositeMfaProviderSelectedAction": {
+        "actionList": [
+          "multifactorProviderSelectedAction"
+        ],
+        "transitions": [
+          "mfa-gauth -> mfa-gauth"
+        ]
+      },
+      "delegatedAuthenticationAction": {
+        "actionList": [
+          "delegatedAuthenticationAction"
+        ],
+        "transitions": [
+          "success -> createTicketGrantingTicket",
+          "error -> initialAuthenticationRequestValidationCheck",
+          "resume -> createTicketGrantingTicket",
+          "authenticationFailure -> checkDelegatedAuthnFailureDecision",
+          "stop -> stopWebflow",
+          "warn -> warn",
+          "mfa-duo -> mfa-duo",
+          "mfa-gauth -> mfa-gauth"
+        ]
+      },
+      "checkDelegatedAuthnFailureDecision": {
+        "transitions": [
+          "flowScope.unauthorizedRedirectUrl != null -> serviceUnauthorizedCheck",
+          "* -> stopWebflow"
+        ]
+      },
+      "stopWebflow": {
+        "entryActions": [
+          "org.apereo.cas.web.flow.DelegatedAuthenticationWebflowConfigurer$1@d11e224b"
+        ],
+        "isViewState": true,
+        "isRedirect": false,
+        "renderActions": [],
+        "viewId": "casPac4jStopWebflow"
+      },
+      "casAuthenticationBlockedView": {
+        "isViewState": true,
+        "isRedirect": false,
+        "viewId": "casAuthenticationBlockedView"
+      },
+      "casBadWorkstationView": {
+        "isViewState": true,
+        "isRedirect": false,
+        "viewId": "casBadWorkstationView"
+      },
+      "casBadHoursView": {
+        "isViewState": true,
+        "isRedirect": false,
+        "viewId": "casBadHoursView"
+      },
+      "casAccountLockedView": {
+        "isViewState": true,
+        "isRedirect": false,
+        "viewId": "casAccountLockedView"
+      },
+      "casAccountDisabledView": {
+        "isViewState": true,
+        "isRedirect": false,
+        "viewId": "casAccountDisabledView"
+      },
+      "casPasswordUpdateSuccess": {
+        "isViewState": true,
+        "isRedirect": false,
+        "viewId": "casPasswordUpdateSuccessView"
+      },
+      "casExpiredPassView": {
+        "isViewState": true,
+        "isRedirect": false,
+        "viewId": "casExpiredPassView"
+      },
+      "casMustChangePassView": {
+        "isViewState": true,
+        "isRedirect": false,
+        "viewId": "casMustChangePassView"
+      },
+      "mfaUnavailable": {
+        "isEndState": true
+      },
+      "mfaDenied": {
+        "isEndState": true
+      },
+      "mfa-duo": {
+        "transitions": [
+          "success -> createTicketGrantingTicket",
+          "successWithWarnings -> showAuthenticationWarningMessages",
+          "deny -> mfaDenied",
+          "unavailable -> mfaUnavailable",
+          "cancel -> initializeLoginForm"
+        ]
+      },
+      "mfa-gauth": {
+        "transitions": [
+          "success -> createTicketGrantingTicket",
+          "successWithWarnings -> showAuthenticationWarningMessages",
+          "deny -> mfaDenied",
+          "unavailable -> mfaUnavailable",
+          "cancel -> initializeLoginForm"
+        ]
+      }
+    },
+    "possibleOutcomes": [
+      "viewRedirectToUnauthorizedUrlView",
+      "viewServiceErrorView",
+      "redirectView",
+      "postView",
+      "viewGenericLoginSuccess",
+      "endWebflowExecution",
+      "mfaUnavailable",
+      "mfaDenied"
+    ],
+    "stateCount": 48,
+    "exceptionHandlers": [
+      "[TransitionExecutingFlowExecutionExceptionHandler@42fa411d exceptionHandlingMappings = map[UnauthorizedSsoServiceException -> viewLoginForm, UnauthorizedServiceException -> serviceUnauthorizedCheck, NoSuchFlowExecutionException -> viewServiceErrorView, PrincipalException -> serviceUnauthorizedCheck, UnauthorizedServiceForPrincipalException -> serviceUnauthorizedCheck]]"
+    ],
+    "variables": "credential"
+  },
+  "mfa-duo": {
+    "startState": "initializeLoginForm",
+    "states": {
+      "initializeLoginForm": {
+        "actionList": [
+          "initializeLoginAction"
+        ],
+        "transitions": [
+          "success -> verifyTrustedDevice"
+        ]
+      },
+      "mfaPreAuth": {
+        "actionList": [
+          "determineDuoUserAccountAction"
+        ],
+        "transitions": [
+          "success -> determineDuoRequest",
+          "enroll -> redirectToDuoRegistration",
+          "bypass -> mfaCheckBypass",
+          "unavailable -> mfaFailure",
+          "deny -> deny",
+          "error -> initializeLoginForm"
+        ]
+      },
+      "determineDuoRequest": {
+        "actionList": [
+          "checkWebAuthenticationRequestAction"
+        ],
+        "transitions": [
+          "yes -> viewLoginFormDuo",
+          "no -> doNonWebAuthentication"
+        ]
+      },
+      "doNonWebAuthentication": {
+        "actionList": [
+          "duoNonWebAuthenticationAction"
+        ],
+        "transitions": [
+          "success -> finalizeAuthentication"
+        ]
+      },
+      "finalizeAuthentication": {
+        "actionList": [
+          "duoAuthenticationWebflowAction"
+        ],
+        "transitions": [
+          "success -> success"
+        ]
+      },
+      "viewLoginFormDuo": {
+        "attributes": [
+          {
+            "empty": false
+          }
+        ],
+        "entryActions": [
+          "prepareDuoWebLoginFormAction"
+        ],
+        "isViewState": true,
+        "isRedirect": false,
+        "renderActions": [],
+        "viewId": "casDuoLoginView",
+        "transitions": [
+          "submit -> realSubmit"
+        ]
+      },
+      "realSubmit": {
+        "actionList": [
+          "duoAuthenticationWebflowAction"
+        ],
+        "transitions": [
+          "success -> prepareRegisterTrustedDevice",
+          "error -> initializeLoginForm",
+          "deny -> deny",
+          "unavailable -> unavailable",
+          "successWithWarnings -> successWithWarnings"
+        ]
+      },
+      "redirectToDuoRegistration": {
+        "isViewState": true,
+        "isRedirect": false,
+        "viewId": "externalRedirect -> #{flowScope.duoRegistrationUrl}"
+      },
+      "success": {
+        "isEndState": true
+      },
+      "deny": {
+        "isEndState": true
+      },
+      "unavailable": {
+        "isEndState": true
+      },
+      "mfaCheckBypass": {
+        "actionList": [
+          "mfaBypassAction"
+        ],
+        "transitions": [
+          "no -> mfaCheckAvailable",
+          "yes -> success"
+        ]
+      },
+      "mfaCheckAvailable": {
+        "actionList": [
+          "mfaAvailableAction"
+        ],
+        "transitions": [
+          "yes -> mfaPreAuth",
+          "no -> mfaFailure"
+        ]
+      },
+      "mfaFailure": {
+        "actionList": [
+          "mfaFailureAction"
+        ],
+        "transitions": [
+          "unavailable -> unavailable",
+          "bypass -> success"
+        ]
+      },
+      "successWithWarnings": {
+        "isEndState": true
+      },
+      "verifyTrustedDevice": {
+        "actionList": [
+          "mfaVerifyTrustAction"
+        ],
+        "transitions": [
+          "yes -> finishMfaTrustedAuth",
+          "no -> mfaCheckBypass",
+          "skip -> mfaCheckBypass"
+        ]
+      },
+      "prepareRegisterTrustedDevice": {
+        "actionList": [
+          "mfaPrepareTrustDeviceViewAction"
+        ],
+        "transitions": [
+          "skip -> success",
+          "register -> registerDeviceView"
+        ]
+      },
+      "registerDeviceView": {
+        "attributes": [
+          {
+            "empty": false
+          }
+        ],
+        "isViewState": true,
+        "isRedirect": false,
+        "viewId": "casMfaRegisterDeviceView",
+        "transitions": [
+          "submit -> registerTrustedDevice"
+        ]
+      },
+      "registerTrustedDevice": {
+        "actionList": [
+          "mfaSetTrustAction"
+        ],
+        "transitions": [
+          "* -> success"
+        ]
+      },
+      "finishMfaTrustedAuth": {
+        "actionList": [
+          "duoAuthenticationWebflowAction"
+        ],
+        "transitions": [
+          "success -> success",
+          "* -> success"
+        ]
+      }
+    },
+    "possibleOutcomes": [
+      "success",
+      "deny",
+      "unavailable",
+      "successWithWarnings"
+    ],
+    "stateCount": 20,
+    "variables": "credential,mfaTrustRecord"
+  }
+}
