@@ -34,19 +34,21 @@
         s (->State state-name edges isEndState isViewState isRedirect)]
     (when debug (pp/pprint edges))
     (when debug (pp/pprint s))
-    {state-name (->State state-name edges isEndState isViewState isRedirect)}))
+    [state-name s]))
+    ;{state-name (->State state-name edges isEndState isViewState isRedirect)}))
 
 (defn- parse-edges [transitions]
   (mapv #(clojure.string/split % #" -> ") transitions))
 
 (defn- parse-subflow [{states :states :as all}]
-  (mapv (fn [[k v]] {k (repeat 5 k)}) all))
+  ;(mapv (fn [[k v]] {k (repeat 5 k)}) all))
   ;(mapv parse-state states))
+  (into {} (map parse-state) states))
   ;(reduce-kv #(assoc %1 %2 (parse-state %2 %3)) {} states))
 
 (defn- parse-webflow [webflow]
-  ;(reduce-kv #(assoc %1 %2 (parse-subflow %3)) {} webflow))
-  (transform [MAP-VALS :states MAP-VALS :transitions] parse-edges webflow))
+  (reduce-kv #(assoc %1 %2 (parse-subflow %3)) {} webflow))
+  ;(transform [MAP-VALS :states MAP-VALS :transitions] parse-edges webflow))
 
 (defn- get-edges [webflow]
   (->> webflow
@@ -61,7 +63,7 @@
     :always default))
 
 ;(defn state->node [{:keys [name end? view?] :as state}]
-(defn state->node [state-name {:keys [isEndState isViewState isRedirect]}]
+(defn state->node [[state-name {:keys [isEndState isViewState isRedirect]}]]
   {:id        state-name
    :shape     :circle
    :color     :black
@@ -82,9 +84,10 @@
 
 
 (defn graph-webflow [webflow]
-  (for [[subflow states] webflow]
+  (doseq [[subflow states] webflow]
+    (println "Graphing subflow " subflow)
     (let [nodes (map state->node states)
-          edges (mapcat all-edges states)
+          edges (mapcat #(mapv (transition->edge (first %)) (:transitions (second %))) states)
           dot   (tangle/graph->dot nodes edges tangle-opts)
           basename (name subflow)]
       (clojure.pprint/pprint nodes)
